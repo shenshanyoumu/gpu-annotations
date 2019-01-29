@@ -1,3 +1,4 @@
+//片元着色器，注意支持内生的一些数学处理过程
 module.exports = `__HEADER__;
 precision highp float;
 precision highp int;

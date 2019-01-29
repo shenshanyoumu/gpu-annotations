@@ -40,6 +40,7 @@ const _systemEndianness = (() => {
 let _isFloatReadPixelsSupported = null;
 let _isFloatReadPixelsSupportedWebGL2 = null;
 
+// 对let、const的支持
 let _isMixedIdentifiersSupported = (() => {
   try {
     new Function('let i = 1; const j = 1;')();
@@ -51,71 +52,21 @@ let _isMixedIdentifiersSupported = (() => {
 
 let _hasIntegerDivisionAccuracyBug = null;
 
-/**
- * @class
- * @extends UtilsCore
- */
+// gpu.js库内部使用的核心工具
 class Utils extends UtilsCore {
-  //-----------------------------------------------------------------------------
-  //
-  //  System values support (currently only endianness)
-  //
-  //-----------------------------------------------------------------------------
-
   /**
-   * @memberOf Utils
-   * @name systemEndianness
-   * @function
-   * @static
-   *
-   * Gets the system endianness, and cache it
-   *
-   * @returns {String} 'LE' or 'BE' depending on system architecture
-   *
-   * Credit: https://gist.github.com/TooTallNate/4750953
+   * 基于系统架构判定大小端
    */
   static systemEndianness() {
     return _systemEndianness;
   }
 
-  //-----------------------------------------------------------------------------
-  //
-  //  Function and function string validations
-  //
-  //-----------------------------------------------------------------------------
-
-  /**
-   * @memberOf Utils
-   * @name isFunction
-   * @function
-   * @static
-   *
-   * Return TRUE, on a JS function
-   *
-   * @param {Function} funcObj - Object to validate if its a function
-   *
-   * @returns	{Boolean} TRUE if the object is a JS function
-   *
-   */
+  //   参数是否为函数
   static isFunction(funcObj) {
     return typeof funcObj === 'function';
   }
 
-  /**
-   * @memberOf Utils
-   * @name isFunctionString
-   * @function
-   * @static
-   *
-   * Return TRUE, on a valid JS function string
-   *
-   * Note: This does just a VERY simply sanity check. And may give false positives.
-   *
-   * @param {String} funcStr - String of JS function to validate
-   *
-   * @returns {Boolean} TRUE if the string passes basic validation
-   *
-   */
+  //  参数是否就是“function”字符串
   static isFunctionString(funcStr) {
     if (funcStr !== null) {
       return (
@@ -128,23 +79,12 @@ class Utils extends UtilsCore {
     return false;
   }
 
-  /**
-   * @memberOf Utils
-   * @name getFunctionName_fromString
-   * @function
-   * @static
-   *
-   * Return the function name from a JS function string
-   *
-   * @param {String} funcStr - String of JS function to validate
-   *
-   * @returns {String} Function name string (if found)
-   *
-   */
+  //  提取函数名称
   static getFunctionNameFromString(funcStr) {
     return FUNCTION_NAME.exec(funcStr)[1];
   }
 
+  //   提取函数体字符串
   static getFunctionBodyFromString(funcStr) {
     return funcStr.substring(
       funcStr.indexOf('{') + 1,
@@ -152,19 +92,7 @@ class Utils extends UtilsCore {
     );
   }
 
-  /**
-   * @memberOf Utils
-   * @name getParamNames_fromString
-   * @function
-   * @static
-   *
-   * Return list of parameter names extracted from the JS function string
-   *
-   * @param {String} funcStr - String of JS function to validate
-   *
-   * @returns {String[]}  Array representing all the parameter names
-   *
-   */
+  //   提取函数参数列表
   static getParamNamesFromString(func) {
     const fnStr = func.toString().replace(STRIP_COMMENTS, '');
     let result = fnStr
@@ -174,25 +102,7 @@ class Utils extends UtilsCore {
     return result;
   }
 
-  //-----------------------------------------------------------------------------
-  //
-  //  Object / function cloning and manipulation
-  //
-  //-----------------------------------------------------------------------------
-
-  /**
-   * @memberOf Utils
-   * @name clone
-   * @function
-   * @static
-   *
-   * Returns a clone
-   *
-   * @param {Object} obj - Object to clone
-   *
-   * @returns {Object}  Cloned object
-   *
-   */
+  //  对象深度拷贝
   static clone(obj) {
     if (
       obj === null ||
@@ -214,19 +124,7 @@ class Utils extends UtilsCore {
     return temp;
   }
 
-  /**
-   * @memberOf Utils
-   * @name newPromise
-   * @function
-   * @static
-   *
-   * Returns a `new Promise` object based on the underlying implmentation
-   *
-   * @param {Function} executor - Promise builder function
-   *
-   * @returns {Promise}  Promise object
-   *
-   */
+  //   在浏览器环境使用promise特性，如果浏览器不支持promise则引入第三方库
   static newPromise(executor) {
     const simple = Promise || small_promise;
     if (simple === null) {
@@ -237,20 +135,7 @@ class Utils extends UtilsCore {
     return new simple(executor);
   }
 
-  /**
-   * @memberOf Utils
-   * @name functionBinder
-   * @function
-   * @static
-   *
-   * Limited implementation of Function.bind, with fallback
-   *
-   * @param {Function} inFunc - to setup bind on
-   * @param {Object} thisObj - The this parameter to assume inside the binded function
-   *
-   * @returns {Function}  The binded function
-   *
-   */
+  //   函数bind this上下文过程
   static functionBinder(inFunc, thisObj) {
     if (inFunc.bind) {
       return inFunc.bind(thisObj);
@@ -263,19 +148,7 @@ class Utils extends UtilsCore {
     };
   }
 
-  /**
-   * @memberOf Utils
-   * @name isArray
-   * @function
-   * @static
-   *
-   * * Checks if is an array or Array-like object
-   *
-   * @param {Object} arg - The argument object to check if is array
-   *
-   * @returns {Boolean}  true if is array or Array-like object
-   *
-   */
+  //   判定参数是否为数组
   static isArray(array) {
     if (isNaN(array.length)) {
       return false;
@@ -284,19 +157,7 @@ class Utils extends UtilsCore {
     return true;
   }
 
-  /**
-   * @memberOf Utils
-   * @name getArgumentType
-   * @function
-   * @static
-   *
-   * Evaluate the argument type, to apply respective logic for it
-   *
-   * @param {Object} arg - The argument object to evaluate type
-   *
-   * @returns {String}  Argument type Array/Number/Float/Texture/Unknown
-   *
-   */
+  //   判定参数类型
   static getArgumentType(arg) {
     if (Utils.isArray(arg)) {
       if (arg[0].nodeName === 'IMG') {

@@ -1,5 +1,6 @@
 'use strict';
 
+// 纹理对象用于在kernel函数之间流动数据，从而实现管道效果
 module.exports = class Texture {
   /**
    *

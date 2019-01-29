@@ -15,7 +15,7 @@ GPU.js 是一个面向 GPGPU 的 Javascript 加速库，其工作原理就是将
 ```js
 const gpu = new GPU();
 
-// 注意下面，this.thread由gpu.js库编译后充分利用GPU的多核来并行计算
+// 注意下面参数a、b表示两个512*512的矩阵，而this.thread由gpu.js库编译后充分利用GPU的多核来并行计算
 const matMult = gpu
   .createKernel(function(a, b) {
     var sum = 0;
@@ -29,7 +29,7 @@ const matMult = gpu
 const c = matMult(a, b);
 ```
 
-可以执行 benchMark[here](http://gpu.rocks). 其加速性能根据硬件环境而定.
+可以执行 benchMark [这里](http://gpu.rocks). 其加速性能根据硬件环境而定.
 
 也可以使用 [kernel playground here](http://gpu.rocks/playground)进行在线尝试
 
@@ -63,20 +63,20 @@ const c = matMult(a, b);
 ### npm
 
 ```bash
-npm install gpu.js --save
+npm install gpu.js --save #安装gpu.js模块
 ```
 
 ### yarn
 
 ```bash
-yarn add gpu.js
+yarn add gpu.js #基于yarn工具来安装
 ```
 
 [npm package](https://www.npmjs.com/package/gpu.js)
 
 ### Browser
 
-Download the latest version of GPU.js and include the files in your HTML page using the following tags:
+也可以在 HTML 页面的 scripts 引入:
 
 ```html
 <script src="/path/to/js/gpu.min.js"></script>
@@ -90,21 +90,21 @@ const gpu = new GPU();
 
 ## `GPU` Options
 
-Options are an object used to create an instance of `GPU`. Example: `new GPU(options)`
+用于创建 `GPU`实例的配置项. 比如 `new GPU(options)`
 
-- `canvas`: `HTMLCanvasElement`. Optional. For sharing canvas. Example: use THREE.js and GPU.js on same canvas.
-- `webGl`: `WebGL2RenderingContext` or `WebGLRenderingContext`. For sharing rendering context. Example: use THREE.js and GPU.js on same rendering context.
+- `canvas`: `HTMLCanvasElement`. 可选配置，用于在同一个 canvas 上下文环境共享，比如在 Three 和 gpu.js 共享
+- `webGl`: `WebGL2RenderingContext` or `WebGLRenderingContext`. 用于共享渲染上下文环境
 
 ## `gpu.createKernel` Options
 
-Options are an object used to create a `kernel` or `kernelMap`. Example: `gpu.createKernel(options)`
+用于创建 `kernel` 或者 `kernelMap`的配置对象. 比如 `gpu.createKernel(options)`
 
-- `output`: array or object that describes the output of kernel.
-  - as array: `[width]`, `[width, height]`, or `[width, height, depth]`
-  - as object: `{ x: width, y: height, z: depth }`
-- outputToTexture: boolean
-- graphical: boolean
-- loopMaxIterations: number
+- `output`: 数组/对象，用于描述 kernel 的输出.
+  - 数组形式: `[width]`, `[width, height]`, or `[width, height, depth]`
+  - 对象形式: `{ x: width, y: height, z: depth }`
+- outputToTexture: 是否将输出结果载通过纹理转换，这样可以基于 gpu.js 来完成 Three 的一些功能
+- graphical: 是否输出为图像
+- loopMaxIterations: 迭代输出次数
 - constants: object
 - wraparound: boolean
 - hardcodeConstants: boolean
@@ -120,7 +120,7 @@ Options are an object used to create a `kernel` or `kernelMap`. Example: `gpu.cr
 
 ## Creating and Running Functions
 
-Depending on your output type, specify the intended size of your output. You cannot have an accelerated function that does not specify any output size.
+基于输出类型来定义输出维度，必须显式定义输出维度才能进行加速计算过程
 
 | Output size | How to specify output size | How to reference in kernel                           |
 | ----------- | -------------------------- | ---------------------------------------------------- |
@@ -143,7 +143,7 @@ const opt = {
 };
 ```
 
-Create the function you want to run on the GPU. The first input parameter to `createKernel` is a kernel function which will compute a single number in the output. The thread identifiers, `this.thread.x`, `this.thread.y` or `this.thread.z` will allow you to specify the appropriate behavior of the kernel function at specific positions of the output.
+创建能够在 GPU 上执行的函数，`creeateKernel`函数接受的一个参数为 kernel 函数，将基于 GPU 的核来计算，比如 `this.thread.x`, `this.thread.y` or `this.thread.z` 来决定输出结构
 
 ```js
 const myFunc = gpu.createKernel(function() {
@@ -151,21 +151,17 @@ const myFunc = gpu.createKernel(function() {
 }, opt);
 ```
 
-The created function is a regular JavaScript function, and you can use it like one.
-
 ```js
 myFunc();
 // Result: [0, 1, 2, 3, ... 99]
 ```
-
-Note: Instead of creating an object, you can use the chainable shortcut methods as a neater way of specifying options.
 
 ```js
 const myFunc = gpu
   .createKernel(function() {
     return this.thread.x;
   })
-  .setOutput([100]);
+  .setOutput([100]); // 设置输出为长度为100的一维数组
 
 myFunc();
 // Result: [0, 1, 2, 3, ... 99]
@@ -173,13 +169,13 @@ myFunc();
 
 ### Declaring variables
 
-GPU.js makes variable declaration inside kernel functions easy. Variable types supported are:
+GPU.js 支持在 kernel 函数中参与运算的数据类型包括:
 Numbers
 Array(2)
 Array(3)
 Array(4)
 
-Numbers example:
+数值型:
 
 ```js
 const myFunc = gpu
@@ -191,8 +187,7 @@ const myFunc = gpu
   .setOutput([100]);
 ```
 
-Array(2) examples:
-Using declaration
+长度为 2 的数组:
 
 ```js
 const myFunc = gpu
@@ -203,18 +198,7 @@ const myFunc = gpu
   .setOutput([100]);
 ```
 
-Directly returned
-
-```js
-const myFunc = gpu
-  .createKernel(function() {
-    return [0.08, 2];
-  })
-  .setOutput([100]);
-```
-
-Array(3) example:
-Using declaration
+长度为 3 的数组:
 
 ```js
 const myFunc = gpu
@@ -225,18 +209,7 @@ const myFunc = gpu
   .setOutput([100]);
 ```
 
-Directly returned
-
-```js
-const myFunc = gpu
-  .createKernel(function() {
-    return [0.08, 2, 0.1];
-  })
-  .setOutput([100]);
-```
-
-Array(4) example:
-Using declaration
+长度为 4 的数组:
 
 ```js
 const myFunc = gpu
@@ -247,29 +220,18 @@ const myFunc = gpu
   .setOutput([100]);
 ```
 
-Directly returned
-
-```js
-const myFunc = gpu
-  .createKernel(function() {
-    return [0.08, 2, 0.1, 3];
-  })
-  .setOutput([100]);
-```
-
 ## Accepting Input
 
-### Supported Input Types
+### kernel 函数接受参数类型
 
-- Numbers
-- 1d Array
-- 2d Array
-- 3d Array
+- 数值型
+- 一维数组
+- 二维数组
+- 三维数组
 - HTML Image
 - Array of HTML Images
-  To define an argument, simply add it to the kernel function like regular JavaScript.
 
-### Input Examples
+### 输出参数例子
 
 ```js
 const myFunc = gpu
@@ -282,7 +244,7 @@ myFunc(42);
 // Result: [42, 42, 42, 42, ... 42]
 ```
 
-Similarly, with array inputs:
+参数为数组形式:
 
 ```js
 const myFunc = gpu
@@ -295,7 +257,7 @@ myFunc([1, 2, 3]);
 // Result: [1, 2, 3, 1, ... 1 ]
 ```
 
-An HTML Image:
+接受 HTML Image 作为参数:
 
 ```js
 const myFunc = gpu
@@ -314,7 +276,7 @@ image.onload = () => {
 };
 ```
 
-An Array of HTML Images:
+接受 HTML Images 数组作为参数:
 
 ```js
 const myFunc = gpu
@@ -322,7 +284,7 @@ const myFunc = gpu
     const pixel = image[this.thread.z][this.thread.y][this.thread.x];
     this.color(pixel[0], pixel[1], pixel[2], pixel[3]);
   })
-  .setGraphical(true)
+  .setGraphical(true) // 输出为图像
   .setOutput([100]);
 
 const image1 = new document.createElement('img');
@@ -345,11 +307,9 @@ function onload() {
 }
 ```
 
-## Graphical Output
+## 图像格式输出
 
-Sometimes, you want to produce a `canvas` image instead of doing numeric computations. To achieve this, set the `graphical` flag to `true` and the output dimensions to `[width, height]`. The thread identifiers will now refer to the `x` and `y` coordinate of the pixel you are producing. Inside your kernel function, use `this.color(r,g,b)` or `this.color(r,g,b,a)` to specify the color of the pixel.
-
-For performance reasons, the return value of your function will no longer be anything useful. Instead, to display the image, retrieve the `canvas` DOM node and insert it into your page.
+有时需要生成 `canvas` 图像而不是单纯进行数值计算. 为了实现这个功能，需要设置 `graphical`标记为`true`，并且 setOutput 为 `[width, height]`. 在自定义的 kernel 函数内部, 使用`this.color(r,g,b)` 或者 `this.color(r,g,b,a)` 来定义图像相应像素的颜色.
 
 ```js
 const render = gpu
@@ -359,17 +319,16 @@ const render = gpu
   .setOutput([20, 20])
   .setGraphical(true);
 
+// 渲染一个黑色的20*20区域的图像，然后绘制到canvas元素上
 render();
 
 const canvas = render.getCanvas();
 document.getElementsByTagName('body')[0].appendChild(canvas);
 ```
 
-Note: To animate the rendering, use `requestAnimationFrame` instead of `setTimeout` for optimal performance. For more information, see [this](https://developer.mozilla.org/en-US/docs/Web/API/window/requestAnimationFrame).
-
 ### Alpha
 
-Currently, if you need alpha do something like enabling `premultipliedAlpha` with your own gl context:
+基于`premultipliedAlpha`来进行图像通道设置:
 
 ```js
 const canvas = DOM.canvas(500, 500);
@@ -389,7 +348,7 @@ const krender = gpu
 
 ## Combining kernels
 
-Sometimes you want to do multiple math operations on the gpu without the round trip penalty of data transfer from cpu to gpu to cpu to gpu, etc. To aid this there is the `combineKernels` method.
+基于 `combineKernels` 方法可以整合多个 kernel 函数，而不需要数据在 CPU 和 GPU 之间的多次流动.
 _**Note:**_ Kernels can have different output sizes.
 
 ```js
@@ -405,6 +364,7 @@ const multiply = gpu
   })
   .setOutput([20]);
 
+// 先进行数组加法，然后乘法
 const superKernel = gpu.combineKernels(add, multiply, function(a, b, c) {
   return multiply(add(a[this.thread.x], b[this.thread.x]), c[this.thread.x]);
 });
@@ -412,11 +372,9 @@ const superKernel = gpu.combineKernels(add, multiply, function(a, b, c) {
 superKernel(a, b, c);
 ```
 
-This gives you the flexibility of using multiple transformations but without the performance penalty, resulting in a much much MUCH faster operation.
-
 ## Create Kernel Map
 
-Sometimes you want to do multiple math operations in one kernel, and save the output of each of those operations. An example is **Machine Learning** where the previous output is required for back propagation. To aid this there is the `createKernelMap` method.
+有时候需要在同一个 kernel 函数进行多种运算过程, 并且独立保存每个独立过程的执行结果，因此 gpu.js 提供 `createKernelMap`方法来实现.
 
 ### object outputs
 
@@ -460,11 +418,9 @@ megaKernel(a, b, c);
 // Result: [ [], [] ].result []
 ```
 
-This gives you the flexibility of using parts of a single transformation without the performance penalty, resulting in much much _MUCH_ faster operation.
-
 ## Adding custom functions
 
-use `gpu.addFunction(function() {}, options)` for adding custom functions. Example:
+使用 `gpu.addFunction(function() {}, options)`来添加自定义函数:
 
 ```js
 gpu.addFunction(function mySuperFunction(a, b) {
@@ -483,11 +439,7 @@ const kernel = gpu
 
 ### Adding strongly typed functions
 
-To strongly type a function you may use options. Options take an optional hash values:
-`returnType`: optional, defaults to float, the value you'd like to return from the function
-`paramTypes`: optional, defaults to float for each param, a hash of param names with values of the return types
-
-Types: that may be used for `returnType` or for each property of `paramTypes`:
+强类型函数定义了返回值类型和参数类似:
 
 - 'Array'
 - 'Array(2)'
@@ -499,13 +451,12 @@ Types: that may be used for `returnType` or for each property of `paramTypes`:
 - 'NumberTexture'
 - 'ArrayTexture(4)'
 
-Example:
-
 ```js
 gpu.addFunction(
   function mySuperFunction(a, b) {
     return [a - b[1], b[0] - a];
   },
+  //下面表示参数a为数值型、参数b为数组，而返回值为数组类型
   { paramTypes: { a: 'Number', b: 'Array(2)' }, returnType: 'Array(2)' }
 );
 ```
@@ -526,10 +477,10 @@ const kernel = gpu
 
 ## Loops
 
-- Any loops defined inside the kernel must have a maximum iteration count defined by the loopMaxIterations option.
-- Other than defining the iterations by a constant or fixed value as shown [Dynamic sized via constants](dynamic-sized-via-constants), you can also simply pass the number of iterations as a variable to the kernel
+- 定义在 kernel 函数中的循环过程必须设置最大迭代次数，可以通过`loopMaxIterations`配置选项设置
+- 除此之外，还可以通过内置的 constants 对象和固定值来设置迭代次数 [Dynamic sized via constants](dynamic-sized-via-constants)
 
-### Dynamic sized via constants
+### 基于 constants 来设置迭代次数
 
 ```js
 const matMult = gpu.createKernel(
@@ -547,7 +498,7 @@ const matMult = gpu.createKernel(
 );
 ```
 
-### Fixed sized
+### 固定值 512 表示最大迭代次数
 
 ```js
 const matMult = gpu
@@ -563,14 +514,13 @@ const matMult = gpu
 
 ## Pipelining
 
-[Pipeline](<https://en.wikipedia.org/wiki/Pipeline_(computing)>) is a feature where values are sent directly from kernel to kernel via a texture.
-This results in extremely fast computing. This is achieved with the kernel option `outputToTexture: boolean` option or by calling `kernel.setOutputToTexture(true)`
+基于 [管道](<https://en.wikipedia.org/wiki/Pipeline_(computing)>)技术，可将 kernel 函数的执行结果通过纹理对象直接输入到另一个 kernel 函数。为了开启管道，可以通过设置 `outputToTexture: boolean` 选项或者调用`kernel.setOutputToTexture(true)`
 
 ## Offscreen Canvas
 
-GPU.js supports offscreen canvas where available. Here is an example of how to use it with two files, `gpu-worker.js`, and `index.js`:
+GPU.js 支持离线 canva，下面例子:
 
-file: `gpu-worker.js`
+文件: `gpu-worker.js`
 
 ```js
 importScripts('path/to/gpu.js');
@@ -604,15 +554,14 @@ worker.onmessage = function(e) {
 };
 ```
 
-## Cleanup
+## 清理工作
 
-- for instances of `GPU` use the `destroy` method. Example: `gpu.destroy()`
-- for instances of `Kernel` use the `destroy` method. Example: `kernel.destroy()`
+- 针对 `GPU` 实例对象，使用`gpu.destroy()`方法进行清理
+- 针对 `Kernel`实例对象，使用 `kernel.destroy()`方法进行清理
 
-## Flattened typed array support
+## 扁平化类型数组功能
 
-To use the useful `x`, `y`, `z` `thread` lookup api inside of GPU.js, and yet use flattened arrays, there is the `Input` type.
-This is generally much faster for when sending values to the gpu, especially with larger data sets. Usage example:
+基于 Input 类来处理扁平化类型数组，从而方便开发者传参:
 
 ```js
 import GPU, { input } from 'gpu.js';
@@ -623,19 +572,17 @@ const kernel = gpu
   })
   .setOutput([3, 3]);
 
+// 基于input辅助类来对扁平化的类型数组进行处理，以方便在kernel函数内部计算。
+// 记住input方法的第二个参数size，表示内部使用的数组维度
 kernel(
   input(new Float32Array([1, 2, 3, 4, 5, 6, 7, 8, 9]), [3, 3]),
   input(new Float32Array([1, 2, 3, 4, 5, 6, 7, 8, 9]), [3, 3])
 );
 ```
 
-Note: `GPU.input(value, size)` is a simple pointer for `new GPU.Input(value, size)`
+## gpu.js 支持的 Math 方法
 
-## Supported Math functions
-
-Since the code running in the kernel is actually compiled to GLSL code, not all functions from the JavaScript Math module are supported.
-
-This is a list of the supported ones:
+由于在 kernel 函数中定义的代码最终被转换为 GLSL 代码并输入 GPU 执行，因此并不会支持全量的 Math 方法，下面列举了部分支持的 Math 方法:
 
 ```
 abs
@@ -658,15 +605,15 @@ sqrt
 tan
 ```
 
-## Full API Reference
+## API 文档
 
-You can find a [complete API reference here](https://doxdox.org/gpujs/gpu.js/1.2.0).
+可以在 [API 完全手册](https://doxdox.org/gpujs/gpu.js/1.2.0)参考.
 
-## Automatically-built Documentation
+## 自动构建文档
 
-Documentation of the codebase is [automatically built](https://github.com/gpujs/gpu.js/wiki/Automatic-Documentation).
+代码文档在 [automatically built](https://github.com/gpujs/gpu.js/wiki/Automatic-Documentation).
 
-## Contributors
+## 贡献者
 
 - Fazli Sapuan
 - Eugene Cheah
@@ -678,19 +625,14 @@ Documentation of the codebase is [automatically built](https://github.com/gpujs/
 - Mark Theng
 - Varun Patro
 
-## Contributing
+## 贡献 PR
 
-Contributors are welcome! Create a merge request to the `develop` branch and we
-will gladly review it. If you wish to get write access to the repository,
-please email us and we will review your application and grant you access to
-the `develop` branch.
+基于项目的`develop`开发，并提交 PR 到`develop`分支.
 
-We promise never to pass off your code as ours.
+## 术语解释
 
-## Terms Explained
-
-- Kernel - A function that is tightly coupled to program that runs on the Graphic Processor
-- Texture - A graphical artifact that is packed with data, in the case of GPU.js, bit shifted parts of a 32 bit floating point decimal
+- Kernel - 基于 Graphic Processor 处理的自定义函数
+- Texture - 打包数据的图像结构, 在 GPU.js 中每个图像像素由 32 位表示
 
 ## License
 
