@@ -1,3 +1,4 @@
+// 顶点着色器，对模型的顶点进行位置、颜色等变换
 module.exports = `precision highp float;
 precision highp int;
 precision highp sampler2D;
